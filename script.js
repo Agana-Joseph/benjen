@@ -87,73 +87,26 @@ wishForm.addEventListener('submit', function (e) {
 // ==========================================
 // REMOTE STORAGE (JSONBin.io)
 // ==========================================
-// 1. Go to https://jsonbin.io/login and sign up (Free).
-// 2. Dashboard -> API Keys -> Copy "Master Key" (starts with $2a$10...).
-// 3. Paste it below in 'apiKey'.
-// 4. (Optional) Create a Bin manually and paste ID in 'binId', or let the script create one.
+// Configured for SHARED Access
+// We use a specific Bin ID so everyone sees the SAME wishes.
 
 const JSONBIN_CONFIG = {
-    apiKey: '$2a$10$jwCHvl.jOrpOfiFZJGY6.eM78bE9smB09T5MV9ITmMKUvx0OesMjq', // Public Master Key
-    binId: '',                         // Leave empty to auto-create on first save
+    apiKey: '$2a$10$jwCHvl.jOrpOfiFZJGY6.eM78bE9smB09T5MV9ITmMKUvx0OesMjq', // Master Key
+    binId: '695f80f243b1c97be921801f',        // SHARED BIN ID (Ensures visibility for all)
     baseUrl: 'https://api.jsonbin.io/v3/b'
 };
 
-// Fallback to localStorage if API fails or key is missing
+// Fallback to localStorage if API fails
 const USE_FALLBACK = true;
 
 async function getBinUrl() {
-    // 1. Check if we have a configured binId
-    if (JSONBIN_CONFIG.binId) return `${JSONBIN_CONFIG.baseUrl}/${JSONBIN_CONFIG.binId}`;
-
-    // 2. Check localStorage for a previously created binId
-    const storedBinId = localStorage.getItem('benjen_bin_id');
-    if (storedBinId) {
-        JSONBIN_CONFIG.binId = storedBinId;
-        return `${JSONBIN_CONFIG.baseUrl}/${storedBinId}`;
-    }
-
-    // 3. If no Bin ID, we must CREATE one (requires valid API Key)
-    if (JSONBIN_CONFIG.apiKey === 'PASTE_YOUR_API_KEY_HERE') {
-        console.warn('⚠️ JSONBin API Key is missing. Using LocalStorage only.');
-        return null;
-    }
-
-    try {
-        console.log('Creating new JSONBin container...');
-        const response = await fetch(JSONBIN_CONFIG.baseUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_CONFIG.apiKey,
-                'X-Bin-Name': 'BenJen_Wedding_Wishes' // Optional name
-            },
-            body: JSON.stringify({ wishes: [] })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const newBinId = data.metadata.id;
-
-            // Save ID for future use
-            localStorage.setItem('benjen_bin_id', newBinId);
-            JSONBIN_CONFIG.binId = newBinId;
-
-            console.log('✅ New JSONBin Created. ID:', newBinId);
-            return `${JSONBIN_CONFIG.baseUrl}/${newBinId}`;
-        } else {
-            const err = await response.json();
-            console.error('Failed to create Bin:', err);
-        }
-    } catch (e) {
-        console.error('Error creating JSONBin:', e);
-    }
-
-    return null;
+    // Always use the shared Bin ID
+    return `${JSONBIN_CONFIG.baseUrl}/${JSONBIN_CONFIG.binId}`;
 }
 
 async function saveWish(wish) {
     try {
-        // Load existing wishes first
+        // Load existing wishes from the SHARED bin first
         const wishes = await loadWishesFromAPI();
         wishes.unshift(wish); // Add new wish to top
 
@@ -162,8 +115,7 @@ async function saveWish(wish) {
 
         const binUrl = await getBinUrl();
 
-        // If we have a valid Bin URL (requires Key), save to cloud
-        if (binUrl && JSONBIN_CONFIG.apiKey !== 'PASTE_YOUR_API_KEY_HERE') {
+        if (binUrl) {
             const response = await fetch(binUrl, {
                 method: 'PUT',
                 headers: {
@@ -174,12 +126,10 @@ async function saveWish(wish) {
             });
 
             if (!response.ok) throw new Error('JSONBin save failed');
-        } else {
-            // If no remote, just log it (LocalStorage handle below)
-            console.log('Remote save skipped (No API Key/Bin), saving locally.');
+            console.log('✅ Wish saved to Public Wall');
         }
 
-        // Always save to LocalStorage as backup/primary
+        // Save to LocalStorage as backup
         if (USE_FALLBACK) {
             localStorage.setItem('benjenWishes', JSON.stringify(updatedWishes));
         }
@@ -202,18 +152,16 @@ async function loadWishesFromAPI() {
     try {
         const binUrl = await getBinUrl();
 
-        if (binUrl && JSONBIN_CONFIG.apiKey !== 'PASTE_YOUR_API_KEY_HERE') {
-            const response = await fetch(binUrl, {
-                headers: {
-                    'X-Master-Key': JSONBIN_CONFIG.apiKey
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // JSONBin v3 returns data in 'record'
-                return data.record?.wishes || [];
+        const response = await fetch(binUrl, {
+            headers: {
+                'X-Master-Key': JSONBIN_CONFIG.apiKey
             }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // JSONBin v3 returns data in 'record'
+            return data.record?.wishes || [];
         }
     } catch (error) {
         console.error('Error loading remote wishes:', error);
