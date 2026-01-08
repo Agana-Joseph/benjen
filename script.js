@@ -87,13 +87,14 @@ wishForm.addEventListener('submit', function (e) {
 // ==========================================
 // REMOTE STORAGE FOR WISHES (JSONBin.io)
 // ==========================================
-const JSONBIN_CONFIG = {
-    binId: '679e0a3eacd3cb34a8c4e9c7', // This is a public bin for BenJen wedding wishes
-    apiKey: '$2a$10$vQZ8yLHxGqJ0kZxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxK', // Public read/write key
+// Config - we will try to load a valid bin or create one
+let JSONBIN_CONFIG = {
+    binId: '679e0a3eacd3cb34a8c4e9c7', // Initial ID
+    apiKey: '$2a$10$vQZ8yLHxGqJ0kZxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxKxK', // Master Key
     baseUrl: 'https://api.jsonbin.io/v3'
 };
 
-// Fallback to localStorage if API fails
+// Fallback to localStorage if API fails completely
 const USE_FALLBACK = true;
 
 async function saveWish(wish) {
@@ -115,7 +116,7 @@ async function saveWish(wish) {
             body: JSON.stringify({ wishes: updatedWishes })
         });
 
-        if (!response.ok) throw new Error('Failed to save wish');
+        if (!response.ok) throw new Error('Failed to save wish to remote bin');
 
         // Also save to localStorage as backup
         if (USE_FALLBACK) {
@@ -124,7 +125,7 @@ async function saveWish(wish) {
 
         return true;
     } catch (error) {
-        console.error('Error saving wish to remote storage:', error);
+        console.error('Error saving wish:', error);
 
         // Fallback to localStorage
         if (USE_FALLBACK) {
@@ -138,13 +139,61 @@ async function saveWish(wish) {
     }
 }
 
+async function createNewBin() {
+    try {
+        console.log('Attempting to create a new JSONBin...');
+        const response = await fetch(`${JSONBIN_CONFIG.baseUrl}/b`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_CONFIG.apiKey,
+                'X-Bin-Name': 'BenJen_Wedding_Wishes'
+            },
+            body: JSON.stringify({ wishes: [] })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const newBinId = data.metadata.id;
+            console.log('✅ NEW BIN CREATED! ID:', newBinId);
+
+            // Update Config
+            JSONBIN_CONFIG.binId = newBinId;
+
+            // Persist this new ID to localStorage so we remember it for this user's session
+            // Note: In a real app, you'd update the source code with this new ID
+            localStorage.setItem('benjen_bin_id', newBinId);
+
+            return [];
+        } else {
+            console.error('Failed to create new bin:', await response.text());
+            return null;
+        }
+    } catch (e) {
+        console.error('Error creating new bin:', e);
+        return null;
+    }
+}
+
 async function loadWishesFromAPI() {
+    // Check if we have a saved working bin ID
+    const savedBinId = localStorage.getItem('benjen_bin_id');
+    if (savedBinId) {
+        JSONBIN_CONFIG.binId = savedBinId;
+    }
+
     try {
         const response = await fetch(`${JSONBIN_CONFIG.baseUrl}/b/${JSONBIN_CONFIG.binId}/latest`, {
             headers: {
                 'X-Master-Key': JSONBIN_CONFIG.apiKey
             }
         });
+
+        if (response.status === 404) {
+            console.warn('Bin not found (404). Attempting to create a new one...');
+            const newBinWishes = await createNewBin();
+            if (newBinWishes !== null) return newBinWishes;
+        }
 
         if (!response.ok) throw new Error('Failed to load wishes');
 
