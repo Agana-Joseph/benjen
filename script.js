@@ -85,38 +85,101 @@ wishForm.addEventListener('submit', function (e) {
 });
 
 // ==========================================
-// REMOTE STORAGE FOR WISHES (JSONBlob.com)
+// REMOTE STORAGE (JSONBin.io)
 // ==========================================
-// Using a pre-generated JSONBlob for free, CORS-enabled storage
-// Blob ID: 019b9cee-a5bd-7844-8c52-b9b7717f5151
-const BLOB_ID = '019b9cee-a5bd-7844-8c52-b9b7717f5151';
-const API_URL = `https://jsonblob.com/api/jsonBlob/${BLOB_ID}`;
+// 1. Go to https://jsonbin.io/login and sign up (Free).
+// 2. Dashboard -> API Keys -> Copy "Master Key" (starts with $2a$10...).
+// 3. Paste it below in 'apiKey'.
+// 4. (Optional) Create a Bin manually and paste ID in 'binId', or let the script create one.
 
-// Fallback to localStorage if API fails completely
+const JSONBIN_CONFIG = {
+    apiKey: '$2a$10$jwCHvl.jOrpOfiFZJGY6.eM78bE9smB09T5MV9ITmMKUvx0OesMjq', // Public Master Key
+    binId: '',                         // Leave empty to auto-create on first save
+    baseUrl: 'https://api.jsonbin.io/v3/b'
+};
+
+// Fallback to localStorage if API fails or key is missing
 const USE_FALLBACK = true;
+
+async function getBinUrl() {
+    // 1. Check if we have a configured binId
+    if (JSONBIN_CONFIG.binId) return `${JSONBIN_CONFIG.baseUrl}/${JSONBIN_CONFIG.binId}`;
+
+    // 2. Check localStorage for a previously created binId
+    const storedBinId = localStorage.getItem('benjen_bin_id');
+    if (storedBinId) {
+        JSONBIN_CONFIG.binId = storedBinId;
+        return `${JSONBIN_CONFIG.baseUrl}/${storedBinId}`;
+    }
+
+    // 3. If no Bin ID, we must CREATE one (requires valid API Key)
+    if (JSONBIN_CONFIG.apiKey === 'PASTE_YOUR_API_KEY_HERE') {
+        console.warn('⚠️ JSONBin API Key is missing. Using LocalStorage only.');
+        return null;
+    }
+
+    try {
+        console.log('Creating new JSONBin container...');
+        const response = await fetch(JSONBIN_CONFIG.baseUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_CONFIG.apiKey,
+                'X-Bin-Name': 'BenJen_Wedding_Wishes' // Optional name
+            },
+            body: JSON.stringify({ wishes: [] })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const newBinId = data.metadata.id;
+
+            // Save ID for future use
+            localStorage.setItem('benjen_bin_id', newBinId);
+            JSONBIN_CONFIG.binId = newBinId;
+
+            console.log('✅ New JSONBin Created. ID:', newBinId);
+            return `${JSONBIN_CONFIG.baseUrl}/${newBinId}`;
+        } else {
+            const err = await response.json();
+            console.error('Failed to create Bin:', err);
+        }
+    } catch (e) {
+        console.error('Error creating JSONBin:', e);
+    }
+
+    return null;
+}
 
 async function saveWish(wish) {
     try {
-        // Get current wishes first
+        // Load existing wishes first
         const wishes = await loadWishesFromAPI();
-        wishes.unshift(wish);
+        wishes.unshift(wish); // Add new wish to top
 
-        // Keep only last 50 wishes
+        // Keep last 50
         const updatedWishes = wishes.slice(0, 50);
 
-        // Update the blob
-        const response = await fetch(API_URL, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ wishes: updatedWishes })
-        });
+        const binUrl = await getBinUrl();
 
-        if (!response.ok) throw new Error('Failed to save to remote storage');
+        // If we have a valid Bin URL (requires Key), save to cloud
+        if (binUrl && JSONBIN_CONFIG.apiKey !== 'PASTE_YOUR_API_KEY_HERE') {
+            const response = await fetch(binUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_CONFIG.apiKey
+                },
+                body: JSON.stringify({ wishes: updatedWishes })
+            });
 
-        // Also save to localStorage as backup
+            if (!response.ok) throw new Error('JSONBin save failed');
+        } else {
+            // If no remote, just log it (LocalStorage handle below)
+            console.log('Remote save skipped (No API Key/Bin), saving locally.');
+        }
+
+        // Always save to LocalStorage as backup/primary
         if (USE_FALLBACK) {
             localStorage.setItem('benjenWishes', JSON.stringify(updatedWishes));
         }
@@ -124,39 +187,40 @@ async function saveWish(wish) {
         return true;
     } catch (error) {
         console.error('Error saving wish:', error);
-
-        // Fallback to localStorage
+        // Ensure LocalStorage backup works even if remote fails
         if (USE_FALLBACK) {
             let wishes = JSON.parse(localStorage.getItem('benjenWishes') || '[]');
             wishes.unshift(wish);
             wishes = wishes.slice(0, 50);
             localStorage.setItem('benjenWishes', JSON.stringify(wishes));
         }
-
         return false;
     }
 }
 
 async function loadWishesFromAPI() {
     try {
-        const response = await fetch(API_URL);
+        const binUrl = await getBinUrl();
 
-        if (!response.ok) throw new Error('Failed to load wishes');
+        if (binUrl && JSONBIN_CONFIG.apiKey !== 'PASTE_YOUR_API_KEY_HERE') {
+            const response = await fetch(binUrl, {
+                headers: {
+                    'X-Master-Key': JSONBIN_CONFIG.apiKey
+                }
+            });
 
-        const data = await response.json();
-        // JSONBlob returns the array/object directly
-        if (Array.isArray(data)) return data;
-        return data.wishes || [];
-    } catch (error) {
-        console.error('Error loading wishes from remote storage:', error);
-
-        // Fallback to localStorage
-        if (USE_FALLBACK) {
-            return JSON.parse(localStorage.getItem('benjenWishes') || '[]');
+            if (response.ok) {
+                const data = await response.json();
+                // JSONBin v3 returns data in 'record'
+                return data.record?.wishes || [];
+            }
         }
-
-        return [];
+    } catch (error) {
+        console.error('Error loading remote wishes:', error);
     }
+
+    // Fallback: Return LocalStorage wishes
+    return JSON.parse(localStorage.getItem('benjenWishes') || '[]');
 }
 
 async function loadWishes() {
