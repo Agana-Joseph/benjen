@@ -85,49 +85,15 @@ wishForm.addEventListener('submit', function (e) {
 });
 
 // ==========================================
-// REMOTE STORAGE FOR WISHES (ExtendsClass)
+// REMOTE STORAGE FOR WISHES (JSONBlob.com)
 // ==========================================
-// Using ExtendsClass for free, CORS-enabled, no-auth storage
-const STORAGE_KEY_NAME = 'benjen_storage_id';
-const API_BASE_URL = 'https://extendsclass.com/api/json-storage/bin';
+// Using a pre-generated JSONBlob for free, CORS-enabled storage
+// Blob ID: 019b9cee-a5bd-7844-8c52-b9b7717f5151
+const BLOB_ID = '019b9cee-a5bd-7844-8c52-b9b7717f5151';
+const API_URL = `https://jsonblob.com/api/jsonBlob/${BLOB_ID}`;
 
 // Fallback to localStorage if API fails completely
 const USE_FALLBACK = true;
-
-async function getStorageUrl() {
-    let storageId = localStorage.getItem(STORAGE_KEY_NAME);
-
-    if (!storageId) {
-        try {
-            console.log('Initializing new remote storage...');
-            // Create a new bin
-            const response = await fetch(API_BASE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // data = { "status": 0, "uri": "...", "id": "..." }
-                storageId = data.id;
-
-                if (storageId) {
-                    localStorage.setItem(STORAGE_KEY_NAME, storageId);
-                    console.log('✅ New storage initialized ID:', storageId);
-                    return `${API_BASE_URL}/${storageId}`;
-                }
-            }
-        } catch (e) {
-            console.error('Failed to initialize storage:', e);
-            return null;
-        }
-    }
-
-    return storageId ? `${API_BASE_URL}/${storageId}` : null;
-}
 
 async function saveWish(wish) {
     try {
@@ -138,14 +104,12 @@ async function saveWish(wish) {
         // Keep only last 50 wishes
         const updatedWishes = wishes.slice(0, 50);
 
-        const storageUrl = await getStorageUrl();
-        if (!storageUrl) throw new Error('No storage URL available');
-
-        // ExtendsClass uses PUT to update
-        const response = await fetch(storageUrl, {
+        // Update the blob
+        const response = await fetch(API_URL, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({ wishes: updatedWishes })
         });
@@ -175,14 +139,13 @@ async function saveWish(wish) {
 
 async function loadWishesFromAPI() {
     try {
-        const storageUrl = await getStorageUrl();
-        if (!storageUrl) return [];
-
-        const response = await fetch(storageUrl);
+        const response = await fetch(API_URL);
 
         if (!response.ok) throw new Error('Failed to load wishes');
 
         const data = await response.json();
+        // JSONBlob returns the array/object directly
+        if (Array.isArray(data)) return data;
         return data.wishes || [];
     } catch (error) {
         console.error('Error loading wishes from remote storage:', error);
