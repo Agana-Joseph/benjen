@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BenJen Wedding - Benjamin & Janifar</title>
-    <meta name="description" content="Join us in celebrating the union of Benjamin and Janifar - A Premium Wedding Experience in Benin City, Nigeria">
+    <meta name="description"
+        content="Join us in celebrating the union of Benjamin and Janifar - A Premium Wedding Experience in Benin City, Nigeria">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 </head>
+
 <body>
     <!-- Hero Section -->
     <section class="hero" id="home">
-        <div class="hero-overlay"></div>
         <div class="hero-content">
             <div class="hero-text animate-fade-in">
                 <p class="hero-subtitle">Celebrating Love</p>
@@ -37,15 +41,68 @@
             </div>
             <div class="story-content">
                 <p class="story-text">
-                    Two hearts, one beautiful journey. Benjamin and Janifar's love story is a testament to faith, 
-                    friendship, and the beautiful tapestry of Nigerian romance. From their first meeting to this 
+                    Two hearts, one beautiful journey. Benjamin and Janifar's love story is a testament to faith,
+                    friendship, and the beautiful tapestry of Nigerian romance. From their first meeting to this
                     momentous celebration, their journey has been filled with laughter, joy, and unwavering devotion.
                 </p>
                 <p class="story-text">
-                    As they prepare to unite their lives in holy matrimony, they invite you to witness and celebrate 
-                    this sacred union. Join them as they embark on a lifetime of love, partnership, and endless possibilities.
+                    As they prepare to unite their lives in holy matrimony, they invite you to witness and celebrate
+                    this sacred union. Join them as they embark on a lifetime of love, partnership, and endless
+                    possibilities.
                 </p>
                 <div class="story-signature">With love, BenJen</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section with Flip Cards -->
+    <section class="gallery" id="gallery">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our Journey</h2>
+                <div class="section-divider"></div>
+                <p class="section-subtitle">Moments that tell our beautiful love story</p>
+            </div>
+
+            <!-- 3D Fan/Coverflow Gallery Container -->
+            <div class="gallery-3d-container">
+                <div class="gallery-carousel">
+                    <!-- Gallery Items -->
+                    <div class="gallery-card" data-index="0">
+                        <img src="gallery_image_1_1767839275755.png" alt="Our Special Day">
+                        <div class="card-caption">Our Special Day</div>
+                    </div>
+                    <div class="gallery-card" data-index="1">
+                        <img src="gallery_image_2_1767839292054.png" alt="Joyful Celebration">
+                        <div class="card-caption">Joyful Celebration</div>
+                    </div>
+                    <div class="gallery-card" data-index="2">
+                        <img src="gallery_image_3_1767839307488.png" alt="Together Forever">
+                        <div class="card-caption">Together Forever</div>
+                    </div>
+                    <div class="gallery-card" data-index="3">
+                        <img src="gallery_image_4_1767839325633.png" alt="Moments of Bliss">
+                        <div class="card-caption">Moments of Bliss</div>
+                    </div>
+                    <div class="gallery-card" data-index="4">
+                        <img src="gallery_image_5_1767839341005.png" alt="Love & Romance">
+                        <div class="card-caption">Love & Romance</div>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="gallery-controls">
+                    <button class="nav-btn prev-btn" aria-label="Previous image">←</button>
+                    <div class="gallery-indicators">
+                        <span class="indicator active" data-index="0"></span>
+                        <span class="indicator" data-index="1"></span>
+                        <span class="indicator" data-index="2"></span>
+                        <span class="indicator" data-index="3"></span>
+                        <span class="indicator" data-index="4"></span>
+                    </div>
+                    <button class="nav-btn next-btn" aria-label="Next image">→</button>
+                </div>
+                <p class="gallery-instruction">Swipe or click to explore</p>
             </div>
         </div>
     </section>
@@ -77,7 +134,7 @@
                         </div>
                     </div>
                     <p class="event-description">
-                        Join us for an unforgettable pre-wedding celebration filled with music, 
+                        Join us for an unforgettable pre-wedding celebration filled with music,
                         dancing, and joyful anticipation.
                     </p>
                 </div>
@@ -97,7 +154,7 @@
                         </div>
                     </div>
                     <p class="event-description">
-                        The sacred ceremony where two souls become one. Witness the union of 
+                        The sacred ceremony where two souls become one. Witness the union of
                         Benjamin and Janifar in holy matrimony.
                     </p>
                 </div>
@@ -117,8 +174,8 @@
                     <div class="dress-code-icon">👔</div>
                     <h3 class="dress-code-theme">Pink Agbada & Native Wears</h3>
                     <p class="dress-code-description">
-                        Embrace the elegance of Nigerian fashion. We invite you to celebrate with us 
-                        in stunning pink agbada and traditional native attire. Let's paint the town pink 
+                        Embrace the elegance of Nigerian fashion. We invite you to celebrate with us
+                        in stunning pink agbada and traditional native attire. Let's paint the town pink
                         with style, culture, and sophistication.
                     </p>
                 </div>
@@ -148,7 +205,7 @@
                 <div class="section-divider"></div>
                 <p class="section-subtitle">Share your love and blessings with the happy couple</p>
             </div>
-            
+
             <!-- Wish Form -->
             <div class="wish-form-container">
                 <form class="wish-form" id="wishForm">
@@ -156,7 +213,8 @@
                         <input type="text" id="wishName" placeholder="Your Name" required>
                     </div>
                     <div class="form-group">
-                        <textarea id="wishMessage" placeholder="Your wedding wish for Benjamin & Janifar..." rows="4" required></textarea>
+                        <textarea id="wishMessage" placeholder="Your wedding wish for Benjamin & Janifar..." rows="4"
+                            required></textarea>
                     </div>
                     <button type="submit" class="submit-button">Send Your Wishes</button>
                 </form>
@@ -165,15 +223,18 @@
             <!-- Wishes Display -->
             <div class="wishes-grid" id="wishesGrid">
                 <div class="wish-card">
-                    <p class="wish-message">"Wishing you both a lifetime of love, laughter, and endless happiness. May your union be blessed abundantly!"</p>
+                    <p class="wish-message">"Wishing you both a lifetime of love, laughter, and endless happiness. May
+                        your union be blessed abundantly!"</p>
                     <p class="wish-author">— Sarah & Michael</p>
                 </div>
                 <div class="wish-card">
-                    <p class="wish-message">"Congratulations on your special day! May God's grace continue to guide your beautiful journey together."</p>
+                    <p class="wish-message">"Congratulations on your special day! May God's grace continue to guide your
+                        beautiful journey together."</p>
                     <p class="wish-author">— Pastor & Mrs. Osagie</p>
                 </div>
                 <div class="wish-card">
-                    <p class="wish-message">"To the most beautiful couple! Your love story inspires us all. Cheers to forever! 💕"</p>
+                    <p class="wish-message">"To the most beautiful couple! Your love story inspires us all. Cheers to
+                        forever! 💕"</p>
                     <p class="wish-author">— The Okonkwo Family</p>
                 </div>
             </div>
@@ -192,4 +253,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
