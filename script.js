@@ -85,35 +85,40 @@ wishForm.addEventListener('submit', function (e) {
 });
 
 // ==========================================
-// REMOTE STORAGE FOR WISHES (KeyValue.xyz)
+// REMOTE STORAGE FOR WISHES (ExtendsClass)
 // ==========================================
-// Using KeyValue.xyz for free, CORS-enabled, no-auth storage
-const STORAGE_KEY_NAME = 'benjen_storage_url';
+// Using ExtendsClass for free, CORS-enabled, no-auth storage
+const STORAGE_KEY_NAME = 'benjen_storage_id';
+const API_BASE_URL = 'https://extendsclass.com/api/json-storage/bin';
 
 // Fallback to localStorage if API fails completely
 const USE_FALLBACK = true;
 
 async function getStorageUrl() {
-    let storageUrl = localStorage.getItem(STORAGE_KEY_NAME);
+    let storageId = localStorage.getItem(STORAGE_KEY_NAME);
 
-    if (!storageUrl) {
+    if (!storageId) {
         try {
             console.log('Initializing new remote storage...');
-            // Create a new key
-            const response = await fetch('https://api.keyvalue.xyz/new/benjenWishes', {
-                method: 'POST'
+            // Create a new bin
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
             });
 
             if (response.ok) {
-                // The text body contains the full URL with the key
-                // e.g. https://api.keyvalue.xyz/39b.../benjenWishes
-                storageUrl = await response.text();
-                // Ensure it's a valid URL string (trim newline)
-                storageUrl = storageUrl.trim();
+                const data = await response.json();
+                // data = { "status": 0, "uri": "...", "id": "..." }
+                storageId = data.id;
 
-                localStorage.setItem(STORAGE_KEY_NAME, storageUrl);
-                console.log('✅ New storage initialized:', storageUrl);
-                return storageUrl;
+                if (storageId) {
+                    localStorage.setItem(STORAGE_KEY_NAME, storageId);
+                    console.log('✅ New storage initialized ID:', storageId);
+                    return `${API_BASE_URL}/${storageId}`;
+                }
             }
         } catch (e) {
             console.error('Failed to initialize storage:', e);
@@ -121,7 +126,7 @@ async function getStorageUrl() {
         }
     }
 
-    return storageUrl;
+    return storageId ? `${API_BASE_URL}/${storageId}` : null;
 }
 
 async function saveWish(wish) {
@@ -136,10 +141,9 @@ async function saveWish(wish) {
         const storageUrl = await getStorageUrl();
         if (!storageUrl) throw new Error('No storage URL available');
 
-        // KeyValue.xyz expects the value in the body. 
-        // We'll wrap our wishes array in an object just in case
+        // ExtendsClass uses PUT to update
         const response = await fetch(storageUrl, {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
