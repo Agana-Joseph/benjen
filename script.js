@@ -85,46 +85,43 @@ wishForm.addEventListener('submit', function (e) {
 });
 
 // ==========================================
-// REMOTE STORAGE FOR WISHES (JSONBlob.com)
+// REMOTE STORAGE FOR WISHES (KeyValue.xyz)
 // ==========================================
-// Using JSONBlob for simple no-auth remote storage
-const JSONBLOB_API_URL = 'https://jsonblob.com/api/jsonBlob';
+// Using KeyValue.xyz for free, CORS-enabled, no-auth storage
+const STORAGE_KEY_NAME = 'benjen_storage_url';
 
 // Fallback to localStorage if API fails completely
 const USE_FALLBACK = true;
 
-async function getBlobUrl() {
-    let blobId = localStorage.getItem('benjen_blob_id');
+async function getStorageUrl() {
+    let storageUrl = localStorage.getItem(STORAGE_KEY_NAME);
 
-    // If we don't have a blob ID, create a new one
-    if (!blobId) {
+    if (!storageUrl) {
         try {
-            console.log('Creating new remote storage blob...');
-            const response = await fetch(JSONBLOB_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ wishes: [] }) // Initial empty wishes
+            console.log('Initializing new remote storage...');
+            // Create a new key
+            const response = await fetch('https://api.keyvalue.xyz/new/benjenWishes', {
+                method: 'POST'
             });
 
             if (response.ok) {
-                const location = response.headers.get('Location');
-                if (location) {
-                    blobId = location.split('/').pop();
-                    localStorage.setItem('benjen_blob_id', blobId);
-                    console.log('✅ Created new storage blob:', blobId);
-                    return `${JSONBLOB_API_URL}/${blobId}`;
-                }
+                // The text body contains the full URL with the key
+                // e.g. https://api.keyvalue.xyz/39b.../benjenWishes
+                storageUrl = await response.text();
+                // Ensure it's a valid URL string (trim newline)
+                storageUrl = storageUrl.trim();
+
+                localStorage.setItem(STORAGE_KEY_NAME, storageUrl);
+                console.log('✅ New storage initialized:', storageUrl);
+                return storageUrl;
             }
         } catch (e) {
-            console.error('Failed to create blob:', e);
+            console.error('Failed to initialize storage:', e);
             return null;
         }
     }
 
-    return blobId ? `${JSONBLOB_API_URL}/${blobId}` : null;
+    return storageUrl;
 }
 
 async function saveWish(wish) {
@@ -136,15 +133,15 @@ async function saveWish(wish) {
         // Keep only last 50 wishes
         const updatedWishes = wishes.slice(0, 50);
 
-        const blobUrl = await getBlobUrl();
-        if (!blobUrl) throw new Error('No storage URL available');
+        const storageUrl = await getStorageUrl();
+        if (!storageUrl) throw new Error('No storage URL available');
 
-        // Update the blob
-        const response = await fetch(blobUrl, {
-            method: 'PUT',
+        // KeyValue.xyz expects the value in the body. 
+        // We'll wrap our wishes array in an object just in case
+        const response = await fetch(storageUrl, {
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ wishes: updatedWishes })
         });
@@ -172,13 +169,12 @@ async function saveWish(wish) {
     }
 }
 
-
 async function loadWishesFromAPI() {
     try {
-        const blobUrl = await getBlobUrl();
-        if (!blobUrl) return [];
+        const storageUrl = await getStorageUrl();
+        if (!storageUrl) return [];
 
-        const response = await fetch(blobUrl);
+        const response = await fetch(storageUrl);
 
         if (!response.ok) throw new Error('Failed to load wishes');
 
